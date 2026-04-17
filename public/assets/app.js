@@ -1,7 +1,7 @@
 const roleAccess = {
   admin: ['dashboard', 'menu', 'transaksi', 'gudang', 'opname'],
-  gudang: ['gudang', 'opname'],
-  kasir: ['transaksi', 'opname']
+  gudang: ['dashboard', 'menu', 'gudang', 'opname'],
+  kasir: ['dashboard', 'menu', 'transaksi', 'opname']
 };
 
 const app = {

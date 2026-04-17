@@ -31,6 +31,9 @@
         </div>
         <button id="openForm" class="px-5 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">Tambah Menu</button>
       </header>
+      <div id="roleWarning" class="hidden rounded-3xl border border-amber-500 bg-amber-500/10 p-4 text-amber-100">
+        Anda tidak memiliki izin mengubah menu. Hanya admin dan kasir yang dapat menambah atau mengedit menu.
+      </div>
       <section class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
         <div id="formPanel" class="hidden space-y-4 mb-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -54,6 +57,12 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await app.init();
       document.getElementById('logoutBtn').onclick = app.logout;
+      const isMenuEditor = ['admin', 'kasir'].includes(app.userData.role);
+      const warningBox = document.getElementById('roleWarning');
+      if (!isMenuEditor) {
+        warningBox.classList.remove('hidden');
+        document.getElementById('openForm').classList.add('hidden');
+      }
       const bahan = await app.fetchJson('/api/bahan');
       const menuBahan = document.getElementById('menuBahan');
       bahan.forEach((item) => {
@@ -71,15 +80,16 @@
         menus.forEach((item) => {
           const card = document.createElement('div');
           card.className = 'rounded-3xl bg-slate-800 p-5 border border-slate-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4';
+          const actions = isMenuEditor ? `<div class="flex gap-3">
+            <button data-edit="${item.id}" class="editBtn px-4 py-2 rounded-2xl bg-amber-500 text-slate-950">Edit</button>
+            <button data-delete="${item.id}" class="deleteBtn px-4 py-2 rounded-2xl bg-red-500 text-slate-950">Hapus</button>
+          </div>` : '';
           card.innerHTML = `<div>
             <h3 class="text-xl font-semibold">${item.nama}</h3>
             <p class="text-slate-400">Harga: Rp${item.harga.toLocaleString()}</p>
             <p class="text-slate-400">Bahan: ${item.bahan_nama} (${item.jumlah_bahan} ${item.satuan})</p>
           </div>
-          <div class="flex gap-3">
-            <button data-edit="${item.id}" class="editBtn px-4 py-2 rounded-2xl bg-amber-500 text-slate-950">Edit</button>
-            <button data-delete="${item.id}" class="deleteBtn px-4 py-2 rounded-2xl bg-red-500 text-slate-950">Hapus</button>
-          </div>`;
+          ${actions}`;
           list.appendChild(card);
         });
         document.querySelectorAll('.editBtn').forEach((btn) => {
@@ -110,6 +120,10 @@
         document.getElementById('menuJumlah').value = '';
         formPanel.classList.toggle('hidden');
       };
+      if (!isMenuEditor) {
+        document.getElementById('openForm').disabled = true;
+        document.getElementById('saveMenu').disabled = true;
+      }
       document.getElementById('cancelMenu').onclick = () => formPanel.classList.add('hidden');
       document.getElementById('saveMenu').onclick = async () => {
         const body = {
