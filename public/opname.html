@@ -28,6 +28,10 @@
         <h1 class="text-4xl font-semibold">Stock Opname</h1>
         <p class="text-slate-400">Bandingkan stok fisik dengan sistem.</p>
       </header>
+      <div class="view-toggle">
+        <button id="opnameListView" data-view="list" class="active" type="button">List</button>
+        <button id="opnameGridView" data-view="grid" type="button">Grid</button>
+      </div>
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
           <h2 class="text-2xl font-semibold mb-4">Input Stok Fisik</h2>
@@ -50,8 +54,13 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await app.init();
       document.getElementById('logoutBtn').onclick = app.logout;
+      const listViewButton = document.getElementById('opnameListView');
+      const gridViewButton = document.getElementById('opnameGridView');
+      const currentMode = app.loadViewModeFromStorage('opnameList', 'grid');
+      app.setViewMode('opnameList', currentMode, [listViewButton, gridViewButton]);
+      listViewButton.onclick = () => app.setViewMode('opnameList', 'list', [listViewButton, gridViewButton]);
+      gridViewButton.onclick = () => app.setViewMode('opnameList', 'grid', [listViewButton, gridViewButton]);
       const bahan = await app.fetchJson('/api/bahan');
-      const select = document.getElementById('opnameBahan');
       bahan.forEach((item) => {
         const opt = document.createElement('option');
         opt.value = item.id;

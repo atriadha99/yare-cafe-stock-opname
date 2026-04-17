@@ -28,6 +28,10 @@
         <h1 class="text-4xl font-semibold">Kasir Transaksi</h1>
         <p class="text-slate-400">Pilih menu dan simpan transaksi.</p>
       </header>
+      <div class="view-toggle">
+        <button id="transaksiListView" data-view="list" class="active" type="button">List</button>
+        <button id="transaksiGridView" data-view="grid" type="button">Grid</button>
+      </div>
       <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
           <h2 class="text-xl font-semibold mb-4">Daftar Menu</h2>
@@ -52,8 +56,13 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await app.init();
       document.getElementById('logoutBtn').onclick = app.logout;
+      const listViewButton = document.getElementById('transaksiListView');
+      const gridViewButton = document.getElementById('transaksiGridView');
+      const currentMode = app.loadViewModeFromStorage('menuCards', 'grid');
+      app.setViewMode('menuCards', currentMode, [listViewButton, gridViewButton]);
+      listViewButton.onclick = () => app.setViewMode('menuCards', 'list', [listViewButton, gridViewButton]);
+      gridViewButton.onclick = () => app.setViewMode('menuCards', 'grid', [listViewButton, gridViewButton]);
       const menus = await app.fetchJson('/api/menu');
-      const cart = [];
       const renderCart = () => {
         const cartList = document.getElementById('cartList');
         cartList.innerHTML = '';

@@ -28,6 +28,10 @@
         <h1 class="text-4xl font-semibold">Stok Gudang</h1>
         <p class="text-slate-400">Update stok masuk, keluar, dan minimum.</p>
       </header>
+      <div class="view-toggle">
+        <button id="gudangListView" data-view="list" class="active" type="button">List</button>
+        <button id="gudangGridView" data-view="grid" type="button">Grid</button>
+      </div>
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
           <h2 class="text-2xl font-semibold mb-4">Daftar Bahan</h2>
@@ -62,8 +66,13 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await app.init();
       document.getElementById('logoutBtn').onclick = app.logout;
+      const listViewButton = document.getElementById('gudangListView');
+      const gridViewButton = document.getElementById('gudangGridView');
+      const currentMode = app.loadViewModeFromStorage('bahanList', 'grid');
+      app.setViewMode('bahanList', currentMode, [listViewButton, gridViewButton]);
+      listViewButton.onclick = () => app.setViewMode('bahanList', 'list', [listViewButton, gridViewButton]);
+      gridViewButton.onclick = () => app.setViewMode('bahanList', 'grid', [listViewButton, gridViewButton]);
       const bahan = await app.fetchJson('/api/bahan');
-      const list = document.getElementById('bahanList');
       const select = document.getElementById('stokBahan');
       bahan.forEach((item) => {
         const card = document.createElement('div');

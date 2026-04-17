@@ -31,6 +31,10 @@
         </div>
         <button id="openForm" class="px-5 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">Tambah Menu</button>
       </header>
+      <div class="view-toggle">
+        <button id="menuListView" data-view="list" class="active" type="button">List</button>
+        <button id="menuGridView" data-view="grid" type="button">Grid</button>
+      </div>
       <div id="roleWarning" class="hidden rounded-3xl border border-amber-500 bg-amber-500/10 p-4 text-amber-100">
         Anda tidak memiliki izin mengubah menu. Hanya admin dan kasir yang dapat menambah atau mengedit menu.
       </div>
@@ -63,6 +67,12 @@
         warningBox.classList.remove('hidden');
         document.getElementById('openForm').classList.add('hidden');
       }
+      const listViewButton = document.getElementById('menuListView');
+      const gridViewButton = document.getElementById('menuGridView');
+      const currentMode = app.loadViewModeFromStorage('menuList');
+      app.setViewMode('menuList', currentMode, [listViewButton, gridViewButton]);
+      listViewButton.onclick = () => app.setViewMode('menuList', 'list', [listViewButton, gridViewButton]);
+      gridViewButton.onclick = () => app.setViewMode('menuList', 'grid', [listViewButton, gridViewButton]);
       const bahan = await app.fetchJson('/api/bahan');
       const menuBahan = document.getElementById('menuBahan');
       bahan.forEach((item) => {
@@ -120,6 +130,9 @@
         document.getElementById('menuJumlah').value = '';
         formPanel.classList.toggle('hidden');
       };
+      if (!isMenuEditor) {
+        document.getElementById('saveMenu').disabled = true;
+      }
       if (!isMenuEditor) {
         document.getElementById('openForm').disabled = true;
         document.getElementById('saveMenu').disabled = true;

@@ -54,6 +54,32 @@ const app = {
     }
     return res.json();
   },
+  setViewMode: (containerId, mode, buttons = []) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.classList.toggle('space-y-4', mode === 'list');
+    container.classList.toggle('grid', mode === 'grid');
+    container.classList.toggle('md:grid-cols-2', mode === 'grid');
+    container.classList.toggle('xl:grid-cols-3', mode === 'grid');
+    container.classList.toggle('gap-4', mode === 'grid');
+    buttons.forEach((button) => {
+      if (!button) return;
+      if (button.dataset.view === mode) button.classList.add('active');
+      else button.classList.remove('active');
+    });
+    try {
+      localStorage.setItem(`${containerId}-view`, mode);
+    } catch (err) {
+      // ignore storage errors
+    }
+  },
+  loadViewModeFromStorage: (containerId, defaultMode = 'list') => {
+    try {
+      return localStorage.getItem(`${containerId}-view`) || defaultMode;
+    } catch (err) {
+      return defaultMode;
+    }
+  },
   logout: async () => {
     await fetch('/api/logout', { method: 'POST' });
     window.location.href = '/';
