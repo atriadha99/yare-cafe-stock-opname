@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Yare Cafe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="flex min-h-screen">
+    <aside class="w-72 bg-slate-900 p-6 flex flex-col gap-6">
+      <div>
+        <h2 class="text-2xl font-semibold">Yare Cafe</h2>
+        <p class="text-slate-400 mt-1">Dashboard</p>
+      </div>
+      <nav class="space-y-3 text-slate-300">
+        <a href="/dashboard" data-page="dashboard" class="block px-4 py-3 rounded-2xl bg-slate-800">Dashboard</a>
+        <a href="/menu" data-page="menu" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Menu</a>
+        <a href="/transaksi" data-page="transaksi" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Transaksi</a>
+        <a href="/gudang" data-page="gudang" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Gudang</a>
+        <a href="/opname" data-page="opname" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Stock Opname</a>
+      </nav>
+      <button id="logoutBtn" class="mt-auto px-4 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-slate-950 font-semibold">Logout</button>
+    </aside>
+    <main class="flex-1 p-8 space-y-8">
+      <header class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-400">Halo, <span id="userRole" class="font-semibold"></span></p>
+          <h1 class="text-4xl font-semibold">Ringkasan Stok</h1>
+        </div>
+        <div id="notifyBox" class="rounded-3xl bg-amber-500/20 p-4 text-amber-100 hidden"></div>
+      </header>
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+          <p class="text-slate-400">Total Menu</p>
+          <p id="totalMenu" class="text-5xl font-bold mt-3">0</p>
+        </div>
+        <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+          <p class="text-slate-400">Total Transaksi</p>
+          <p id="totalTransaksi" class="text-5xl font-bold mt-3">0</p>
+        </div>
+        <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+          <p class="text-slate-400">Total Stok Bahan</p>
+          <p id="totalStok" class="text-5xl font-bold mt-3">0</p>
+        </div>
+      </section>
+      <section class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-semibold">Status Bahan Baku</h2>
+          <span class="text-slate-400 text-sm">Notifikasi stok rendah otomatis</span>
+        </div>
+        <div id="bahanTable" class="space-y-4"></div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+  <script>
+    window.page = 'dashboard';
+    window.addEventListener('DOMContentLoaded', async () => {
+      await app.init();
+      document.getElementById('logoutBtn').onclick = app.logout;
+      const user = await app.user();
+      document.getElementById('userRole').textContent = user.role;
+      const data = await app.fetchJson('/api/summary');
+      document.getElementById('totalMenu').textContent = data.total_menu;
+      document.getElementById('totalTransaksi').textContent = data.total_transaksi;
+      document.getElementById('totalStok').textContent = data.total_stok;
+      const bahan = await app.fetchJson('/api/bahan');
+      const table = document.getElementById('bahanTable');
+      bahan.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = `rounded-3xl p-4 ${item.qty < item.minimum ? 'bg-red-500/10 border border-red-500 text-red-100' : 'bg-slate-800 border border-slate-700'}`;
+        card.innerHTML = `<div class="flex justify-between"><div><h3 class="text-xl font-semibold">${item.nama}</h3><p class="text-slate-400">${item.qty} ${item.satuan}</p></div><div class="text-right"><p class="text-slate-300">Min: ${item.minimum}</p></div></div>`;
+        table.append(card);
+      });
+      const alerts = bahan.filter((item) => item.qty < item.minimum);
+      if (alerts.length) {
+        const box = document.getElementById('notifyBox');
+        box.innerHTML = `Stok rendah: ${alerts.map((item) => item.nama).join(', ')}`;
+        box.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

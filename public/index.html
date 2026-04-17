@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Yare Cafe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body class="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
+  <div class="w-full max-w-md p-8 bg-slate-800/90 rounded-3xl shadow-2xl border border-slate-700">
+    <div class="mb-6 text-center">
+      <h1 class="text-3xl font-semibold">Yare! Cafe Bintaro</h1>
+      <p class="text-slate-400 mt-2">Sistem Login Admin, Gudang, dan Kasir</p>
+    </div>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-slate-300">Username</label>
+        <input id="username" required class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-slate-100" />
+      </div>
+      <div>
+        <label class="block text-slate-300">Password</label>
+        <input id="password" type="password" required class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-slate-100" />
+      </div>
+      <button type="submit" class="w-full py-3 rounded-2xl bg-amber-500 text-slate-900 font-semibold hover:bg-amber-400 transition">Masuk</button>
+      <p class="text-slate-500 text-sm">admin/admin123, gudang/gudang123, kasir/kasir123</p>
+    </form>
+    <div id="loginAlert" class="mt-4 hidden rounded-xl bg-red-500/20 text-red-200 p-3"></div>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      if (!res.ok) {
+        const data = await res.json();
+        const alert = document.getElementById('loginAlert');
+        alert.textContent = data.error || 'Login gagal';
+        alert.classList.remove('hidden');
+        return;
+      }
+      window.location.href = '/dashboard';
+    });
+  </script>
+</body>
+</html>

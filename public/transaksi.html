@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaksi Kasir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="flex min-h-screen">
+    <aside class="w-72 bg-slate-900 p-6 flex flex-col gap-6">
+      <div>
+        <h2 class="text-2xl font-semibold">Yare Cafe</h2>
+        <p class="text-slate-400 mt-1">Transaksi Kasir</p>
+      </div>
+      <nav class="space-y-3 text-slate-300">
+        <a href="/dashboard" data-page="dashboard" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Dashboard</a>
+        <a href="/menu" data-page="menu" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Menu</a>
+        <a href="/transaksi" data-page="transaksi" class="block px-4 py-3 rounded-2xl bg-slate-800">Transaksi</a>
+        <a href="/gudang" data-page="gudang" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Gudang</a>
+        <a href="/opname" data-page="opname" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Stock Opname</a>
+      </nav>
+      <button id="logoutBtn" class="mt-auto px-4 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-slate-950 font-semibold">Logout</button>
+    </aside>
+    <main class="flex-1 p-8 space-y-8">
+      <header>
+        <h1 class="text-4xl font-semibold">Kasir Transaksi</h1>
+        <p class="text-slate-400">Pilih menu dan simpan transaksi.</p>
+      </header>
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+          <h2 class="text-xl font-semibold mb-4">Daftar Menu</h2>
+          <div id="menuCards" class="space-y-4"></div>
+        </div>
+        <div class="lg:col-span-2 rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+          <h2 class="text-xl font-semibold mb-4">Keranjang</h2>
+          <div id="cartList" class="space-y-4"></div>
+          <div class="mt-6 flex items-center justify-between text-slate-200">
+            <span>Total</span>
+            <span id="grandTotal" class="text-3xl font-bold">Rp0</span>
+          </div>
+          <button id="saveTransaction" class="mt-6 w-full py-3 rounded-2xl bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">Simpan Transaksi</button>
+          <div id="transaksiAlert" class="mt-4 hidden rounded-2xl bg-red-500/20 p-3 text-red-200"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+  <script>
+    window.page = 'transaksi';
+    window.addEventListener('DOMContentLoaded', async () => {
+      await app.init();
+      document.getElementById('logoutBtn').onclick = app.logout;
+      const menus = await app.fetchJson('/api/menu');
+      const cart = [];
+      const renderCart = () => {
+        const cartList = document.getElementById('cartList');
+        cartList.innerHTML = '';
+        let total = 0;
+        cart.forEach((item, index) => {
+          total += item.qty * item.harga;
+          const row = document.createElement('div');
+          row.className = 'rounded-3xl bg-slate-800 p-4 flex items-center justify-between gap-4';
+          row.innerHTML = `<div><p class="font-semibold">${item.nama}</p><p class="text-slate-400">Rp${item.harga.toLocaleString()} x ${item.qty}</p></div><div class="flex items-center gap-2"><button data-index="${index}" class="decreaseBtn px-3 py-1 rounded-2xl bg-slate-700">-</button><button data-index="${index}" class="increaseBtn px-3 py-1 rounded-2xl bg-slate-700">+</button><button data-index="${index}" class="removeBtn px-3 py-1 rounded-2xl bg-red-500">Hapus</button></div>`;
+          cartList.appendChild(row);
+        });
+        document.getElementById('grandTotal').textContent = `Rp${total.toLocaleString()}`;
+        document.querySelectorAll('.increaseBtn').forEach((btn) => btn.onclick = () => { cart[btn.dataset.index].qty++; renderCart(); });
+        document.querySelectorAll('.decreaseBtn').forEach((btn) => { btn.onclick = () => { const idx = btn.dataset.index; if (cart[idx].qty > 1) cart[idx].qty--; else cart.splice(idx, 1); renderCart(); }; });
+        document.querySelectorAll('.removeBtn').forEach((btn) => { btn.onclick = () => { cart.splice(btn.dataset.index, 1); renderCart(); }; });
+      };
+      const menuCards = document.getElementById('menuCards');
+      menus.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'rounded-3xl bg-slate-800 p-5 border border-slate-700';
+        card.innerHTML = `<div class="flex items-center justify-between"><div><h3 class="text-lg font-semibold">${item.nama}</h3><p class="text-slate-400">Rp${item.harga.toLocaleString()}</p></div><button data-id="${item.id}" class="addBtn px-4 py-2 rounded-2xl bg-amber-500 text-slate-950">Tambah</button></div>`;
+        menuCards.appendChild(card);
+      });
+      document.querySelectorAll('.addBtn').forEach((btn) => {
+        btn.onclick = () => {
+          const menu = menus.find((m) => m.id == btn.dataset.id);
+          const existing = cart.find((item) => item.menu_id == menu.id);
+          if (existing) existing.qty++;
+          else cart.push({ menu_id: menu.id, nama: menu.nama, harga: menu.harga, qty: 1 });
+          renderCart();
+        };
+      });
+      document.getElementById('saveTransaction').onclick = async () => {
+        if (!cart.length) {
+          const alert = document.getElementById('transaksiAlert');
+          alert.textContent = 'Keranjang kosong';
+          alert.classList.remove('hidden');
+          return;
+        }
+        const user = await app.user();
+        await app.fetchJson('/api/transaksi', { method: 'POST', body: { kasir: user.username, items: cart } });
+        window.location.reload();
+      };
+    });
+  </script>
+</body>
+</html>

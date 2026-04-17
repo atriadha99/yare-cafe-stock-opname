@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="flex min-h-screen">
+    <aside class="w-72 bg-slate-900 p-6 flex flex-col gap-6">
+      <div>
+        <h2 class="text-2xl font-semibold">Yare Cafe</h2>
+        <p class="text-slate-400 mt-1">Menu Management</p>
+      </div>
+      <nav class="space-y-3 text-slate-300">
+        <a href="/dashboard" data-page="dashboard" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Dashboard</a>
+        <a href="/menu" data-page="menu" class="block px-4 py-3 rounded-2xl bg-slate-800">Menu</a>
+        <a href="/transaksi" data-page="transaksi" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Transaksi</a>
+        <a href="/gudang" data-page="gudang" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Gudang</a>
+        <a href="/opname" data-page="opname" class="block px-4 py-3 rounded-2xl hover:bg-slate-800">Stock Opname</a>
+      </nav>
+      <button id="logoutBtn" class="mt-auto px-4 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-slate-950 font-semibold">Logout</button>
+    </aside>
+    <main class="flex-1 p-8 space-y-8">
+      <header class="flex items-center justify-between">
+        <div>
+          <p class="text-slate-400">Kelola Menu</p>
+          <h1 class="text-4xl font-semibold">Menu Cafe</h1>
+        </div>
+        <button id="openForm" class="px-5 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">Tambah Menu</button>
+      </header>
+      <section class="rounded-3xl bg-slate-900 p-6 shadow-xl border border-slate-700">
+        <div id="formPanel" class="hidden space-y-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input id="menuNama" placeholder="Nama Menu" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700" />
+            <input id="menuHarga" type="number" placeholder="Harga" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700" />
+            <select id="menuBahan" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700"></select>
+            <input id="menuJumlah" type="number" placeholder="Jumlah Bahan (per porsi)" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700" />
+          </div>
+          <div class="flex gap-3">
+            <button id="saveMenu" class="px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-400">Simpan</button>
+            <button id="cancelMenu" class="px-5 py-3 rounded-2xl bg-slate-700 hover:bg-slate-600">Batal</button>
+          </div>
+        </div>
+        <div id="menuList" class="space-y-4"></div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+  <script>
+    window.page = 'menu';
+    window.addEventListener('DOMContentLoaded', async () => {
+      await app.init();
+      document.getElementById('logoutBtn').onclick = app.logout;
+      const bahan = await app.fetchJson('/api/bahan');
+      const menuBahan = document.getElementById('menuBahan');
+      bahan.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = `${item.nama} (${item.satuan})`;
+        menuBahan.appendChild(option);
+      });
+      const formPanel = document.getElementById('formPanel');
+      let editId = null;
+      const loadMenu = async () => {
+        const menus = await app.fetchJson('/api/menu');
+        const list = document.getElementById('menuList');
+        list.innerHTML = '';
+        menus.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'rounded-3xl bg-slate-800 p-5 border border-slate-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4';
+          card.innerHTML = `<div>
+            <h3 class="text-xl font-semibold">${item.nama}</h3>
+            <p class="text-slate-400">Harga: Rp${item.harga.toLocaleString()}</p>
+            <p class="text-slate-400">Bahan: ${item.bahan_nama} (${item.jumlah_bahan} ${item.satuan})</p>
+          </div>
+          <div class="flex gap-3">
+            <button data-edit="${item.id}" class="editBtn px-4 py-2 rounded-2xl bg-amber-500 text-slate-950">Edit</button>
+            <button data-delete="${item.id}" class="deleteBtn px-4 py-2 rounded-2xl bg-red-500 text-slate-950">Hapus</button>
+          </div>`;
+          list.appendChild(card);
+        });
+        document.querySelectorAll('.editBtn').forEach((btn) => {
+          btn.onclick = async () => {
+            const id = btn.dataset.edit;
+            const menu = (await app.fetchJson('/api/menu')).find((m) => m.id == id);
+            if (!menu) return;
+            editId = id;
+            document.getElementById('menuNama').value = menu.nama;
+            document.getElementById('menuHarga').value = menu.harga;
+            document.getElementById('menuBahan').value = menu.bahan_id;
+            document.getElementById('menuJumlah').value = menu.jumlah_bahan;
+            formPanel.classList.remove('hidden');
+          };
+        });
+        document.querySelectorAll('.deleteBtn').forEach((btn) => {
+          btn.onclick = async () => {
+            if (!confirm('Hapus menu?')) return;
+            await app.fetchJson(`/api/menu/${btn.dataset.delete}`, { method: 'DELETE' });
+            loadMenu();
+          };
+        });
+      };
+      document.getElementById('openForm').onclick = () => {
+        editId = null;
+        document.getElementById('menuNama').value = '';
+        document.getElementById('menuHarga').value = '';
+        document.getElementById('menuJumlah').value = '';
+        formPanel.classList.toggle('hidden');
+      };
+      document.getElementById('cancelMenu').onclick = () => formPanel.classList.add('hidden');
+      document.getElementById('saveMenu').onclick = async () => {
+        const body = {
+          nama: document.getElementById('menuNama').value,
+          harga: Number(document.getElementById('menuHarga').value),
+          bahan_id: Number(document.getElementById('menuBahan').value),
+          jumlah_bahan: Number(document.getElementById('menuJumlah').value)
+        };
+        if (editId) {
+          await app.fetchJson(`/api/menu/${editId}`, { method: 'PUT', body });
+        } else {
+          await app.fetchJson('/api/menu', { method: 'POST', body });
+        }
+        formPanel.classList.add('hidden');
+        loadMenu();
+      };
+      loadMenu();
+    });
+  </script>
+</body>
+</html>
